@@ -1,0 +1,8 @@
+f_name:Hannah
+l_name:Sim
+date_of_birth:06-16-2003
+street:24 de Agosto
+barangay:Caingin
+municipality:Malolos
+province:Bulacan
+zip:3000
