@@ -7,45 +7,121 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Profile {
+  id           String    @id @default(cuid())
+  barangay     String
+  municipality String
+  province     String
+  updatedAt    DateTime? @updatedAt @map("updated_at")
+  createdAt    DateTime? @default(now()) @map("created_at")
+  isDeleted    Boolean   @default(false) @map("is_deleted")
+  // medicalHistory MedicalHistory[] @map("medical_history")
+  // allergies String?
+
+  // foreign key to Patient 1-1
+  patientId String  @unique @map("patient_id")
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  @@map("profile")
+}
+
+// Patient model
 model Patient {
-  id            Int              @id @default(autoincrement())
-  f_name        String
-  l_name        String
-  date_of_birth DateTime         @db.Date
-  street        String
-  barangay      String
-  municipality  String
-  province      String
-  zip           String
-  update_at     DateTime?        @updatedAt
-  created_at    DateTime?        @default(now())
-  notes         Note[]
-  doctors       Patient_Doctor[]
+  id          String    @id @default(cuid())
+  firstName   String    @map("first_name")
+  lastName    String    @map("last_name")
+  dateOfBirth DateTime  @map("date_of_birth") @db.Date
+  phoneNumber String?   @map("phone_number")
+  updatedAt   DateTime? @updatedAt @map("updated_at")
+  createdAt   DateTime? @default(now()) @map("created_at")
+  isDeleted   Boolean   @default(false) @map("is_deleted")
+
+  // 1 - 1 [Patient -> Profile]
+  profile Profile?
+
+  // 1 - many [Patient has many Appointments]
+  appointment Appointment[]
+  diagnosis   Diagnosis[]
+
+  // many - many [Patients can have many Doctors ]
+  patientDoctors PatientDoctors[]
+
+  @@map("patients")
 }
 
 model Doctor {
-  id        Int              @id @default(autoincrement())
-  name      String
-  specialty String
-  patients  Patient_Doctor[]
+  id             String    @id @default(cuid())
+  firstName      String    @map("first_name")
+  lastName       String    @map("last_name")
+  specialization String
+  updatedAt      DateTime? @updatedAt @map("updated_at")
+  createdAt      DateTime? @default(now()) @map("created_at")
+  isDeleted      Boolean   @default(false) @map("is_deleted")
+
+  // 1 - many [doctor has many appointments]
+  appointments Appointment[]
+
+  // many - many doctor can have many patiens
+  patientDoctors PatientDoctors[]
+
+  @@map("doctor")
 }
 
-model Note {
-  id         Int       @id @default(autoincrement())
-  content    String
-  created_at DateTime? @default(now())
-  updated_at DateTime? @updatedAt
-  patient_id Int
-  doctor_id  Int
-  patient    Patient   @relation(fields: [patient_id], references: [id])
-}
-
-model Patient_Doctor {
-  id         Int     @id @default(autoincrement())
-  patient_id Int
-  doctor_id  Int
+model PatientDoctors {
+  id         String  @id @default(cuid())
+  patient_id String
+  doctor_id  String
   doctor     Doctor  @relation(fields: [doctor_id], references: [id])
   patient    Patient @relation(fields: [patient_id], references: [id])
 
   @@unique([patient_id, doctor_id])
+}
+
+model Appointment {
+  id        String            @id @default(cuid())
+  date      DateTime
+  type      AppointmentType
+  status    AppointmentStatus
+  updatedAt DateTime?         @updatedAt @map("updated_at")
+  createdAt DateTime?         @default(now()) @map("created_at")
+
+  // foreign key for 1 - many
+  patientId String  @map("patient_id")
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  doctorId String @map("doctor_id")
+  doctor   Doctor @relation(fields: [doctorId], references: [id])
+
+  @@map("appointments")
+}
+
+model Diagnosis {
+  id        String    @id @default(cuid())
+  content   String
+  updatedAt DateTime? @updatedAt @map("updated_at")
+  createdAt DateTime? @default(now()) @map("created_at")
+
+  patientId String
+  patient   Patient @relation(fields: [patientId], references: [id])
+
+  @@map("diagnosis")
+}
+
+// model MedicalHistory {
+
+// }
+
+enum AppointmentType {
+  CONSULTATION
+  CHECKUP
+  FOLLOW_UP
+}
+
+enum AppointmentStatus {
+  SCHEDULED
+  CANCELLED
+  NO_SHOW
+  COMPLETED
+  CONFIRMED
+  RE_SCHEDULE
 }
